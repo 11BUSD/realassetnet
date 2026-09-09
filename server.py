@@ -124,7 +124,8 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(400,{'error':'Invalid request or conflicting record'})
         except Exception:
             if c:c.rollback()
-            import traceback;traceback.print_exc()
+            import traceback
+            print('RAN_UNHANDLED_ERROR',traceback.format_exc(limit=2),flush=True)
             self.respond(500,{'error':'Internal error; no partial transaction committed'})
         finally:
             if c:c.close()
