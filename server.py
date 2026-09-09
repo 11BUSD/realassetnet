@@ -29,10 +29,29 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers();self.wfile.write(raw)
     def do_GET(self): self.handle_request('GET')
     def do_POST(self): self.handle_request('POST')
+    def configure_serverless_runtime(self):
+        """Initialize the ephemeral Vercel demo runtime on its first invocation.
+
+        The regular local server sets these attributes in ``make_server``. Vercel
+        instantiates the request handler directly, so it needs the same explicit,
+        fail-closed configuration here. Durable production state must use a
+        managed database; this only makes the existing simulation usable for a
+        short-lived demo instance.
+        """
+        if hasattr(self.server,'db_path'): return
+        db=os.environ.get('RAN_DB','/tmp/realassetnet-simulation.sqlite')
+        migrate(db);self.server.db_path=db
+        self.server.identity_config=identity.validate_config(identity.load_config())
+        configured={x.strip() for x in os.environ.get('RAN_ALLOWED_HOSTS','').split(',') if x.strip()}
+        vercel_host=os.environ.get('VERCEL_URL','').strip()
+        if vercel_host: configured.add(vercel_host)
+        # There is no insecure wildcard fallback: Vercel supplies VERCEL_URL.
+        self.server.allowed_hosts=configured or {'localhost:8080','127.0.0.1:8080'}
     def handle_request(self,method):
         path=urlsplit(self.path).path
         c=None;u=None
         try:
+            self.configure_serverless_runtime()
             host=self.headers.get('Host','')
             require(host in self.server.allowed_hosts,'Host not allowed',403)
             if not path.startswith('/api/'):
