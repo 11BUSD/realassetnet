@@ -23,7 +23,11 @@ class handler(BaseHTTPRequestHandler):
         except Exception as error:
             # This is intentionally non-sensitive: it identifies an import or
             # platform incompatibility without exposing credentials or files.
-            payload = json.dumps({"error": "Simulation bootstrap failed", "type": type(error).__name__}).encode()
+            payload = json.dumps({
+                "error": "Simulation bootstrap failed",
+                "type": type(error).__name__,
+                "detail": str(error)[:160],
+            }).encode()
             self.send_response(503)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(payload)))
