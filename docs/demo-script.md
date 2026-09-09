@@ -1,0 +1,15 @@
+# Synthetic vertical-slice demonstration
+
+Start `python server.py --seed-demo` and open the local app. Seeded identities are `broker@demo.invalid`, `investor@demo.invalid` and `reviewer@demo.invalid`; each uses `DemoOnly!2026`. These are public demo credentials, not secrets. Reviewer is the application's admin role. Use separate browser sessions or sign out when switching identities.
+
+1. As broker, inspect the seeded Toronto property or create a synthetic GTA multifamily property. Record asking price and units; a property is a physical asset, not an investment instrument.
+2. Upload an accepted text/CSV fixture or paste literal numeric lines: `annual_gross_rent: 420000`, `annual_expenses: 120000`, `vacancy_rate: 0.04`. Confirm each required source claim, including the intake asking price. Confirmation records acknowledgement, not professional verification.
+3. Run underwriting and inspect base/downside/upside, evidence references, formula version and assumptions. Try a different numeric claim for the same field on a disposable property: both originals remain and the contradiction blocks underwriting. A reviewer can select a confirmed nonlegal numeric claim with a reason; the append-only reconciliation preserves all originals. Any new claim for that field invalidates that selection and requires review again. Create a fresh underwriting snapshot after reconciliation.
+4. On another disposable property, upload harmless text containing an instruction to ignore prior instructions. Confirm quarantine and absence of extracted claims. It must not execute anything or release the property. Binary documents are unsupported, not silently marked clean.
+5. Submit the good property for independent review. As reviewer inspect evidence, estimates and UNKNOWN ownership/encumbrance status; publish the factual passport. Public visibility must exclude private financial and investor materials.
+6. As investor, observe that publication does not grant room access. As reviewer, grant the room and separately approve simulated eligibility. Open a property-only simulated offering. No real KYC, security issuance or money movement occurs.
+7. As investor, acknowledge simulation and the displayed fee, then participate with a valid simulated amount. Inspect holding, fee, transaction and portfolio. Repeating the same idempotency key with identical input must not double the position; changing its amount must fail.
+8. As reviewer, record a simulated distribution. As investor inspect the allocation. Total allocated cents must equal the distribution, including rounding remainders.
+9. Inspect action decisions and the audit chain. Attempt unauthorized cross-tenant access and a disabled live action; both must be denied. Run the release check for reproducible test and source-hash evidence.
+
+The app labels simulated state throughout. Audit inspection and chain verification are implemented; full event-sourced reconstruction, live settlement replay and legally effective ownership transfer are not.

@@ -1,0 +1,14 @@
+*
+!server.py
+!app/
+!app/**
+!web/
+!web/**
+!migrations/
+!migrations/**
+!fixtures/
+!fixtures/**
+**/__pycache__/
+**/*.pyc
+**/*.db
+**/*.sqlite*

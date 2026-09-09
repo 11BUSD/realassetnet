@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Realassetnet agent proposal envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_identity",
+    "model_version",
+    "input_references",
+    "source_references",
+    "structured_output",
+    "confidence",
+    "assumptions",
+    "missing_information",
+    "contradictions",
+    "proposed_actions",
+    "timestamp"
+  ],
+  "properties": {
+    "agent_identity": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "input_references": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_references": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "structured_output": {
+      "type": "object"
+    },
+    "confidence": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "meaning": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "value",
+        "meaning"
+      ]
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missing_information": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": [
+          "object",
+          "string"
+        ]
+      }
+    },
+    "proposed_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Proposal only; never direct execution authority."
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

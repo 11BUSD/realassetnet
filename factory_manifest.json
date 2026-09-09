@@ -1,0 +1,24 @@
+{
+  "id": "realassetnet-software-factory",
+  "version": "0.1.0",
+  "mode": "local-simulation",
+  "execution_status": "review-workflow-with-executable-release-gates",
+  "automatic_agent_dispatch": false,
+  "automatic_merge": false,
+  "automatic_deployment": false,
+  "private_core_connected": false,
+  "input_contract": ["objective", "owned_files", "invariants", "synthetic_fixture_provenance", "permitted_side_effects", "acceptance_checks", "production_impact"],
+  "output_contract": ["changed_files", "tests_and_results", "invariant_findings", "known_limits", "source_hash_manifest", "release_decision"],
+  "stages": [
+    {"id": "scope", "owner": "human_or_authorized_build_agent", "requires": ["bounded_work_packet"], "produces": ["acceptance_checks", "owned_files"]},
+    {"id": "implement", "owner": "build_agent", "requires": ["scope"], "produces": ["candidate_diff", "synthetic_regressions"], "permissions": ["owned_project_files_only"]},
+    {"id": "invariant_review", "skill": "skills/ran-invariant-review/SKILL.md", "requires": ["candidate_diff"], "produces": ["actionable_findings"]},
+    {"id": "document_qa", "skill": "skills/ran-document-qa/SKILL.md", "when": "upload, parser, evidence, agent or disclosure boundary changes", "produces": ["adversarial_synthetic_results"]},
+    {"id": "vertical_slice", "skill": "skills/ran-vertical-slice/SKILL.md", "produces": ["workflow_results", "negative_authorization_results"]},
+    {"id": "release_check", "command": ["python", "scripts/release_check.py"], "produces": ["runtime/release_evidence.json"], "external_actions": []},
+    {"id": "human_release_decision", "requires": ["passing_candidate_hash", "exact_diff_review", "environment_qualification"], "produces": ["explicit_release_authorization_or_findings"], "executor": "not_implemented"}
+  ],
+  "agent_runtime_contract": "docs/agent-contracts.md",
+  "production_blockers": "docs/production-blockers.md",
+  "innovation_backlog": "docs/factory-roadmap.md"
+}

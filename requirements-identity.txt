@@ -1,0 +1,2 @@
+# Optional managed identity runtime. Install into an isolated environment.
+clerk-backend-api==7.0.0
