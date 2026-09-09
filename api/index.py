@@ -10,16 +10,16 @@ from http.server import BaseHTTPRequestHandler
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self._serve()
+        self._serve("GET")
 
     def do_POST(self):
-        self._serve()
+        self._serve("POST")
 
-    def _serve(self):
+    def _serve(self, method):
         try:
             from server import Handler
             # Keep the production request implementation in exactly one place.
-            Handler.handle_request(self, self.command)
+            Handler.handle_request(self, method)
         except Exception as error:
             # This is intentionally non-sensitive: it identifies an import or
             # platform incompatibility without exposing credentials or files.
