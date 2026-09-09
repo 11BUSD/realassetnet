@@ -43,8 +43,11 @@ class Handler(BaseHTTPRequestHandler):
         migrate(db);self.server.db_path=db
         self.server.identity_config=identity.validate_config(identity.load_config())
         configured={x.strip() for x in os.environ.get('RAN_ALLOWED_HOSTS','').split(',') if x.strip()}
-        vercel_host=os.environ.get('VERCEL_URL','').strip()
-        if vercel_host: configured.add(vercel_host)
+        # Vercel exposes both the immutable deployment hostname and the stable
+        # production alias.  Permit only the exact platform-provided values.
+        for env_name in ('VERCEL_URL','VERCEL_BRANCH_URL','VERCEL_PROJECT_PRODUCTION_URL'):
+            vercel_host=os.environ.get(env_name,'').strip()
+            if vercel_host: configured.add(vercel_host)
         # There is no insecure wildcard fallback: Vercel supplies VERCEL_URL.
         self.server.allowed_hosts=configured or {'localhost:8080','127.0.0.1:8080'}
     def handle_request(self,method):
