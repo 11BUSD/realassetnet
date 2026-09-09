@@ -19,6 +19,11 @@ class handler(BaseHTTPRequestHandler):
         try:
             from server import Handler
             # Keep the production request implementation in exactly one place.
+            # Vercel constructs this lightweight request class itself, so bind
+            # the shared handler helpers rather than relying on inheritance at
+            # module-import time.
+            type(self).respond = Handler.respond
+            type(self).configure_serverless_runtime = Handler.configure_serverless_runtime
             Handler.handle_request(self, method)
         except Exception as error:
             # This is intentionally non-sensitive: it identifies an import or
@@ -26,7 +31,6 @@ class handler(BaseHTTPRequestHandler):
             payload = json.dumps({
                 "error": "Simulation bootstrap failed",
                 "type": type(error).__name__,
-                "detail": str(error)[:160],
             }).encode()
             self.send_response(503)
             self.send_header("Content-Type", "application/json")
