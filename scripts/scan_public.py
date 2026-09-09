@@ -9,8 +9,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DIRECTORIES = {'app', 'web', 'tests', 'fixtures', 'migrations', 'docs', 'scripts', 'skills', '.github'}
-ROOT_FILES = {'server.py', 'README.md', 'Dockerfile', '.dockerignore', '.gitignore', '.env.example', 'factory_manifest.json','requirements-identity.txt'}
+DIRECTORIES = {'api', 'app', 'web', 'tests', 'fixtures', 'migrations', 'docs', 'scripts', 'skills', '.github'}
+ROOT_FILES = {'server.py', 'README.md', 'Dockerfile', '.dockerignore', '.gitignore', '.env.example', 'factory_manifest.json','requirements-identity.txt','vercel.json'}
 IGNORED = {'runtime', '.git', '__pycache__', '.pytest_cache', '.venv'}
 DATABASE_EXTENSIONS = {'.sqlite', '.sqlite3', '.db', '.mdb', '.accdb', '.xlsx', '.xls', '.parquet'}
 PRIVATE_FILES = {'seed' + '.py', 'network' + '.py', 'build_' + 'database.py', 'review_' + 'data.json'}
