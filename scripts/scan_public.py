@@ -10,11 +10,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORIES = {'api', 'app', 'web', 'tests', 'fixtures', 'migrations', 'docs', 'scripts', 'skills', '.github'}
-ROOT_FILES = {'server.py', 'README.md', 'Dockerfile', '.dockerignore', '.gitignore', '.env.example', 'factory_manifest.json','requirements-identity.txt','vercel.json'}
+ROOT_FILES = {'server.py', 'README.md', 'Dockerfile', '.dockerignore', '.gitignore', '.env.example', 'factory_manifest.json','requirements-identity.txt','vercel.json','design-qa.md'}
 IGNORED = {'runtime', '.git', '__pycache__', '.pytest_cache', '.venv'}
 DATABASE_EXTENSIONS = {'.sqlite', '.sqlite3', '.db', '.mdb', '.accdb', '.xlsx', '.xls', '.parquet'}
 PRIVATE_FILES = {'seed' + '.py', 'network' + '.py', 'build_' + 'database.py', 'review_' + 'data.json'}
 PRIVATE_NAMES = ['C' + 'BRE', 'Coll' + 'iers', 'Quad' + 'Real', 'Peakhill' + ' Capital', 'Harley' + ' Gold', 'Knight' + ' Frank', 'Michael' + ' Betsalel', 'Fiera' + ' Real Estate']
+# Every public binary must be individually reviewed and pinned by digest.  This
+# keeps a future image replacement from silently widening the publication set.
+PUBLIC_BINARY_ASSETS = {
+    'web/hero-toronto.png': '36d472d1e004a92ec510dbc6bb0e937e7fe8d2a311c74ad4f1f5d503b54e1c1d',
+}
 EMAIL = re.compile(r'(?<![\w.-])[A-Z0-9][A-Z0-9.!#$%&\x27*+/=?^_`{|}~-]*@[A-Z0-9.-]+\.[A-Z]{2,}(?![\w.-])', re.I)
 SECRETS = [re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----'), re.compile(r'AKIA[0-9A-Z]{16}'), re.compile(r'gh[pousr]_[A-Za-z0-9]{30,}'), re.compile(r'sk-[A-Za-z0-9_-]{32,}')]
 
@@ -54,7 +59,11 @@ def scan(root=ROOT):
             findings.append({'path': relative, 'rule': 'DATABASE_MAGIC'}); continue
         try: content = data.decode('utf-8-sig')
         except UnicodeDecodeError:
-            findings.append({'path': relative, 'rule': 'BINARY_REQUIRES_EXPLICIT_PUBLIC_REVIEW'}); continue
+            digest = hashlib.sha256(data).hexdigest()
+            if PUBLIC_BINARY_ASSETS.get(relative) != digest:
+                findings.append({'path': relative, 'rule': 'BINARY_REQUIRES_EXPLICIT_PUBLIC_REVIEW'})
+            manifest.append({'path': relative, 'sha256': digest, 'bytes': len(data)})
+            continue
         if '\x00' in content: findings.append({'path': relative, 'rule': 'BINARY_CONTENT'})
         if any(p.search(content) for p in SECRETS): findings.append({'path': relative, 'rule': 'CREDENTIAL_PATTERN'})
         if any(not e.lower().endswith('@demo.invalid') for e in EMAIL.findall(content)):

@@ -59,7 +59,7 @@ class Handler(BaseHTTPRequestHandler):
             require(host in self.server.allowed_hosts,'Host not allowed',403)
             if not path.startswith('/api/'):
                 require(method=='GET','Method not allowed',405)
-                files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css'}
+                files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/hero-toronto.png':'hero-toronto.png'}
                 auth_path=any(path==prefix or path.startswith(prefix+'/') for prefix in ['/auth/sign-in','/auth/sign-up'])
                 require(path in files or auth_path,'Not found',404)
                 file=ROOT/'web'/('index.html' if auth_path else files[path]);require(file.exists(),'UI is not available',503)
