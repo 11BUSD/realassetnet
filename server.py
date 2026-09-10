@@ -42,6 +42,14 @@ class Handler(BaseHTTPRequestHandler):
         db=os.environ.get('RAN_DB','/tmp/realassetnet-simulation.sqlite')
         migrate(db);self.server.db_path=db
         self.server.identity_config=identity.validate_config(identity.load_config())
+        # The deployed experience is explicitly a simulation. Seed only the
+        # fictional fixtures so the documented demo accounts can sign in on a
+        # fresh ephemeral Vercel instance; production must use Clerk + durable
+        # storage instead.
+        if self.server.identity_config['mode']=='demo':
+            c=connect(db)
+            try: seed_demo(c); c.commit()
+            finally: c.close()
         configured={x.strip() for x in os.environ.get('RAN_ALLOWED_HOSTS','').split(',') if x.strip()}
         # Vercel exposes both the immutable deployment hostname and the stable
         # production alias.  Permit only the exact platform-provided values.
