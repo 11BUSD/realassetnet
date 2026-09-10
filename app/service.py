@@ -74,7 +74,17 @@ def dispatch(c,u,method,path,d=None):
     raise Problem('Endpoint not found',404)
 
 def seed_demo(c):
-    if one(c,"SELECT id FROM users WHERE email='reviewer@demo.invalid'"): return
+    # Existing demo databases may predate later fixtures. Keep the seed
+    # idempotent while adding newly introduced safe fixtures on upgrade.
+    if one(c,"SELECT id FROM users WHERE email='reviewer@demo.invalid'"):
+        broker=one(c,"SELECT * FROM users WHERE email='broker@demo.invalid'")
+        investor=one(c,"SELECT * FROM users WHERE email='investor@demo.invalid'")
+        if broker and investor and not one(c,'SELECT id FROM mandates LIMIT 1'):
+            create_mandate(c,broker,{'kind':'OPPORTUNITY','asset_class':'REAL_ESTATE','asset_subtype':'MULTIFAMILY','jurisdiction':'CA-ON','market':'Toronto GTA · DEMO','intent':'DISPOSITION','value_min':5000000,'value_max':8000000,'currency':'CAD','timeline':'Q4 demo window','requirements':'Synthetic demonstration only; no asset address or owner identity is disclosed.','data_classification':'DEMO_SYNTHETIC'})
+            submit_mandate(c,broker,one(c,'SELECT id FROM mandates WHERE created_by=? ORDER BY created_at DESC LIMIT 1',(broker['id'],))['id'],{'consent_to_matching':True})
+            create_mandate(c,investor,{'kind':'CAPITAL_REQUEST','asset_class':'REAL_ESTATE','asset_subtype':'MULTIFAMILY','jurisdiction':'CA-ON','market':'Toronto GTA · DEMO','intent':'ACQUISITION','value_min':5000000,'value_max':8000000,'currency':'CAD','timeline':'Q4 demo window','requirements':'Synthetic matching fixture. Terms remain withheld until bilateral acceptance.','data_classification':'DEMO_SYNTHETIC'})
+            submit_mandate(c,investor,one(c,'SELECT id FROM mandates WHERE created_by=? ORDER BY created_at DESC LIMIT 1',(investor['id'],))['id'],{'consent_to_matching':True})
+        return
     broker=signup(c,{'name':'Alex Morgan · DEMO','email':'broker@demo.invalid','password':'DemoOnly!2026','organization':'DEMO Harbour Originations','role':'broker'})
     investor=signup(c,{'name':'Sam Chen · DEMO','email':'investor@demo.invalid','password':'DemoOnly!2026','organization':'DEMO Investor','role':'investor'})
     reviewer=signup(c,{'name':'Taylor Reed · DEMO','email':'reviewer@demo.invalid','password':'DemoOnly!2026','organization':'DEMO Independent Review','role':'investor'})
