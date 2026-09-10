@@ -48,6 +48,9 @@ def migrate(path):
     if not one(c,'SELECT version FROM schema_versions WHERE version=4'):
         c.executescript((ROOT/'migrations/004_integrations.sql').read_text())
         c.execute('INSERT INTO schema_versions VALUES(4,?)',(now(),));c.commit()
+    if not one(c,'SELECT version FROM schema_versions WHERE version=5'):
+        c.executescript((ROOT/'migrations/005_mandates.sql').read_text())
+        c.execute('INSERT INTO schema_versions VALUES(5,?)',(now(),));c.commit()
     c.close()
 def password_hash(password, salt=None):
     salt=salt or secrets.token_hex(16)

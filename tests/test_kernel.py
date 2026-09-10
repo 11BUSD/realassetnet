@@ -146,5 +146,23 @@ class KernelTests(unittest.TestCase):
         before=self.c.execute('SELECT count(*) FROM properties').fetchone()[0];seed_demo(self.c)
         self.assertEqual(self.c.execute('SELECT count(*) FROM properties').fetchone()[0],before)
         self.assertEqual(rows(self.c,'PRAGMA foreign_key_check'),[])
+    def test_mandate_redaction_consent_and_mutual_evidence_invitation(self):
+        own=dispatch(self.c,self.b,'POST','/api/mandates',{'kind':'OPPORTUNITY','asset_class':'REAL_ESTATE','asset_subtype':'CONDOMINIUM','jurisdiction':'CA-ON','market':'Toronto','intent':'DISPOSITION','value_min':1000000,'value_max':2000000,'currency':'CAD','timeline':'90 days','requirements':'Private address and terms stay withheld pending consent.','data_classification':'REAL_PRIVATE','rights_attested':True})['mandate']
+        with self.assertRaises(Problem):dispatch(self.c,self.b,'POST',f"/api/mandates/{own['id']}/submit",{'consent_to_matching':False})
+        dispatch(self.c,self.b,'POST',f"/api/mandates/{own['id']}/submit",{'consent_to_matching':True})
+        available=dispatch(self.c,self.i,'GET','/api/mandates')['available']
+        seen=next(x for x in available if x['id']==own['id'])
+        for hidden in ['requirements','property_id','value_min','value_max','organization_id','created_by']:self.assertNotIn(hidden,seen)
+        capital=dispatch(self.c,self.i,'POST','/api/mandates',{'kind':'CAPITAL_REQUEST','asset_class':'REAL_ESTATE','asset_subtype':'CONDOMINIUM','jurisdiction':'CA-ON','market':'Toronto','intent':'ACQUISITION','timeline':'90 days','requirements':'Synthetic counterparty mandate.','data_classification':'DEMO_SYNTHETIC'})['mandate']
+        dispatch(self.c,self.i,'POST',f"/api/mandates/{capital['id']}/submit",{'consent_to_matching':True})
+        with self.assertRaises(Problem):dispatch(self.c,self.b,'POST',f"/api/mandates/{own['id']}/matches",{'counterparty_mandate_id':capital['id'],'rationale':'Compatible synthetic mandate'})
+        match=dispatch(self.c,self.a,'POST',f"/api/mandates/{own['id']}/matches",{'counterparty_mandate_id':capital['id'],'rationale':'Compatible synthetic mandate'})['match_id']
+        with self.assertRaises(Problem):dispatch(self.c,self.a,'POST',f'/api/matches/{match}/invitations',{'property_id':self.pid,'invited_user_id':self.i['id']})
+        dispatch(self.c,self.b,'POST',f'/api/matches/{match}/respond',{'accepted':True})
+        dispatch(self.c,self.i,'POST',f'/api/matches/{match}/respond',{'accepted':True})
+        invite=dispatch(self.c,self.a,'POST',f'/api/matches/{match}/invitations',{'property_id':self.pid,'invited_user_id':self.i['id']})['invitation_id']
+        with self.assertRaises(Problem):dispatch(self.c,self.b,'POST',f'/api/invitations/{invite}/accept',{})
+        dispatch(self.c,self.i,'POST',f'/api/invitations/{invite}/accept',{})
+        self.assertTrue(one(self.c,'SELECT * FROM room_grants WHERE user_id=? AND property_id=?',(self.i['id'],self.pid)))
 
 if __name__=='__main__':unittest.main()

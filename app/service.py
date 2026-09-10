@@ -1,5 +1,6 @@
 from .core import *
 from .gateway import gateway
+from .mandates import create_mandate, submit_mandate, list_mandates, propose_match, respond_match, create_room_invitation, accept_room_invitation
 
 def dispatch(c,u,method,path,d=None):
     d=d or {};parts=path.strip('/').split('/')
@@ -12,6 +13,15 @@ def dispatch(c,u,method,path,d=None):
         audit(c,u or {'id':'anonymous','organization_id':None},p['id'],'DISCLOSE_INFORMATION',{'level':0,'decision':'ALLOW','policy':POLICY_VERSION,'fields':['address','city','property_type','units','asking_price','description','originator']})
         return {'property':public_property(c,p)}
     require(u,'Sign in to continue',401)
+    if path=='/api/mandates' and method=='GET': return list_mandates(c,u)
+    if path=='/api/mandates' and method=='POST': return create_mandate(c,u,d)
+    if parts[:2]==['api','mandates'] and len(parts)>=4:
+        if method=='POST' and parts[3]=='submit': return submit_mandate(c,u,parts[2],d)
+        if method=='POST' and parts[3]=='matches': return propose_match(c,u,parts[2],d)
+    if parts[:2]==['api','matches'] and len(parts)>=4:
+        if method=='POST' and parts[3]=='respond': return respond_match(c,u,parts[2],d)
+        if method=='POST' and parts[3]=='invitations': return create_room_invitation(c,u,parts[2],d)
+    if parts[:2]==['api','invitations'] and len(parts)>=4 and method=='POST' and parts[3]=='accept': return accept_room_invitation(c,u,parts[2])
     if path=='/api/workspace' and method=='GET':
         return {'properties':rows(c,'SELECT * FROM properties WHERE organization_id=? ORDER BY created_at DESC',(u['organization_id'],))}
     if path=='/api/properties' and method=='POST': return create_property(c,u,d)
@@ -79,5 +89,13 @@ def seed_demo(c):
         underwrite(c,broker,p['id'],{})
         dispatch(c,broker,'POST',f"/api/properties/{p['id']}/submit-review",{})
         gateway(c,reviewer,{'action':'PUBLISH_PROPERTY','resource_id':p['id'],'reason':'Independent approval of synthetic fixture only'})
+    # Synthetic fixtures make the redacted workflow visible without presenting
+    # a real listing, real capital request, or pre-approved counterparty.
+    create_mandate(c,broker,{'kind':'OPPORTUNITY','asset_class':'REAL_ESTATE','asset_subtype':'MULTIFAMILY','jurisdiction':'CA-ON','market':'Toronto GTA · DEMO','intent':'DISPOSITION','value_min':5000000,'value_max':8000000,'currency':'CAD','timeline':'Q4 demo window','requirements':'Synthetic demonstration only; no asset address or owner identity is disclosed.','data_classification':'DEMO_SYNTHETIC'})
+    broker_mandate=one(c,'SELECT id FROM mandates WHERE created_by=? ORDER BY created_at DESC LIMIT 1',(broker['id'],))['id']
+    submit_mandate(c,broker,broker_mandate,{'consent_to_matching':True})
+    create_mandate(c,investor,{'kind':'CAPITAL_REQUEST','asset_class':'REAL_ESTATE','asset_subtype':'MULTIFAMILY','jurisdiction':'CA-ON','market':'Toronto GTA · DEMO','intent':'ACQUISITION','value_min':5000000,'value_max':8000000,'currency':'CAD','timeline':'Q4 demo window','requirements':'Synthetic matching fixture. Terms remain withheld until bilateral acceptance.','data_classification':'DEMO_SYNTHETIC'})
+    investor_mandate=one(c,'SELECT id FROM mandates WHERE created_by=? ORDER BY created_at DESC LIMIT 1',(investor['id'],))['id']
+    submit_mandate(c,investor,investor_mandate,{'consent_to_matching':True})
     # No pre-granted investor access or pre-approved eligibility: demonstrate boundaries.
     audit(c,reviewer,'demo','SEED_COMPLETED',{'synthetic':True,'live_money':False})
