@@ -27,6 +27,8 @@ class HttpTests(unittest.TestCase):
         client,csrf=self.client('broker')
         code,_,_=self.request('/api/properties',{},client=client);self.assertEqual(code,403)
         code,_,_=self.request('/api/properties',{},headers={'X-CSRF-Token':csrf,'Origin':'https://hostile.example'},client=client);self.assertEqual(code,403)
+        host=self.url.removeprefix('http://')
+        code,_,_=self.request('/api/properties',{},headers={'X-CSRF-Token':csrf,'Origin':'https://'+host,'X-Forwarded-Proto':'https'},client=client);self.assertEqual(code,400) # Authentication is valid; payload validation fails after origin succeeds.
     def test_public_boundary_and_static_allowlist(self):
         code,body,h=self.request('/api/properties');self.assertEqual(code,200);self.assertEqual(len(body['properties']),3)
         for p in body['properties']:self.assertNotIn('claims',p)

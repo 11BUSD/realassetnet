@@ -82,7 +82,12 @@ class Handler(BaseHTTPRequestHandler):
             d={}
             if method=='POST':
                 require(self.headers.get('Content-Type','').split(';')[0]=='application/json','JSON required',415)
-                origin=self.headers.get('Origin');require(not origin or origin=='http://'+host,'Cross-origin request rejected',403)
+                # TLS terminates at Vercel before the request reaches this
+                # Python handler. Compare Origin to the browser-visible scheme,
+                # not the internal HTTP hop, while retaining exact host checks.
+                forwarded=self.headers.get('X-Forwarded-Proto','').split(',',1)[0].strip().lower()
+                scheme=forwarded if forwarded in {'http','https'} else ('http' if host.split(':',1)[0] in {'localhost','127.0.0.1'} else 'https')
+                origin=self.headers.get('Origin');require(not origin or origin==scheme+'://'+host,'Cross-origin request rejected',403)
                 require(self.headers.get('Sec-Fetch-Site') not in ['cross-site'],'Cross-site request rejected',403)
                 limit=7100000 if path.endswith('/upload-binary') else 220000
                 length=int(self.headers.get('Content-Length','0'));require(0<length<=limit,'Request exceeds limit or is empty',413)
